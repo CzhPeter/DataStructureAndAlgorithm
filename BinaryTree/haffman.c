@@ -52,8 +52,8 @@ Node *buildHaffmanTree(Node **node_arr, int n) {
         int freq = node_arr[n - i]->freq + node_arr[n - i - 1]->freq;
         // 建树
         Node *node = getNewNode(0, freq);
-        node->lchild = node_arr[n - i - 1];
-        node->rchild = node_arr[n - i];
+        node->lchild = node_arr[n - i];
+        node->rchild = node_arr[n - i - 1];
         // 合并后的节点加入节点数组末尾
         node_arr[n - i - 1] = node;
     }
