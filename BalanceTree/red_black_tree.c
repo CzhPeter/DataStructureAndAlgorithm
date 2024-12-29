@@ -100,49 +100,55 @@ Node *predecessor(Node *root) {
 }
 
 Node *erase_maintain(Node *root) {
+    // 判断左右孩子是否有双重黑
     if (C(L(root)) != DBLACK && C(R(root)) != DBLACK) {
         return root;
     }
+    // 双重黑的兄弟节点为红色
     if (has_red_node(root)) {
-        // 兄弟节点为红色
-        C(root) = RED;
-        if (C(L(root)) == RED) {
+        // 原根节点变红色，左旋/右旋后把新根节点变成黑色，
+        // 此时双重黑的兄弟节点变为黑色，递归处理
+        root->color = RED;
+        if (root->lchild->color == RED) {
             root = right_rotate(root);
             root->rchild = erase_maintain(root->rchild);
         } else {
             root = left_rotate(root);
             root->lchild = erase_maintain(root->lchild);
         }
-        C(root) = BLACK;
+        root->color = BLACK;
         return root;
     }
-    // 兄弟节点为黑色
-    // 情况1：孩子没有红色节点
-    if (C(L(root)) == DBLACK && !has_red_node(root->rchild) || 
-        C(R(root)) == DBLACK && !has_red_node(root->lchild) ) {
+    // 双重黑的兄弟节点为黑色
+    // 情况1：兄弟节点的孩子没有红色节点
+    if (root->lchild->color == DBLACK && !has_red_node(root->rchild) || 
+        root->rchild->color == DBLACK && !has_red_node(root->lchild) ) {
         root->color += 1;
         root->lchild->color -= 1;
         root->rchild->color -= 1;
         return root;
     }
     // 情况2：孩子有红色节点，需要区分是否同侧，构成LL, LR, RR, RL四种类型
-    if (C(R(root)) == DBLACK) {
-        C(R(root)) = BLACK;
-        if (C(L(L(root))) != RED) { // LR先左旋
+    if (root->rchild->color == DBLACK) {
+        // 双重黑节点的兄弟节点在左侧
+        root->rchild->color = BLACK;
+        if (root->lchild->lchild->color != RED) { // 兄弟节点的右孩子为红色，LR先对兄弟节点进行小左旋
             root->lchild = left_rotate(root->lchild);
         }
-        // LL & LR 大右旋
-        root->lchild->color = root->color;
+        // LL & LR 再对根节点大右旋
+        root->lchild->color = root->color; // 新根节点的颜色改为原根节点的颜色
         root = right_rotate(root);
     } else {
-        C(L(root)) = BLACK;
-        if (C(R(R(root))) != RED) { // RL先右旋
+        // 双重黑节点的兄弟节点在右侧
+        root->lchild->color = BLACK;
+        if (root->rchild->rchild->color != RED) { // 兄弟节点的左孩子为红色，RL先对兄弟节点进行小右旋
             root->rchild = right_rotate(root->rchild);
         }
-        // LL & LR 大左旋
-        root->rchild->color = root->color;
+        // LL & LR 再对根节点大左旋
+        root->rchild->color = root->color; // 新根节点的颜色改为原根节点的颜色
         root = left_rotate(root);
     }
+    // 新根节点的两个子节点颜色都改黑
     root->lchild->color = root->rchild->color = BLACK;
     return root;
 }
@@ -162,7 +168,7 @@ Node *__erase(Node *root, int key) {
             free(root);
             return temp;
         }
-        // 删除节点度为2
+        // 删除节点度为2：找前驱，转换为度为1或0的问题
         Node *temp = predecessor(root);
         root->key = temp->key;
         root->lchild = __erase(root->lchild, temp->key);
